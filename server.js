@@ -4,7 +4,9 @@ const Bundler = require("parcel-bundler")
 const websocketify = require("express-ws")
 const WebSocketJSONStream = require("@teamwork/websocket-json-stream")
 const ShareDB = require("sharedb")
+const textType = require("ot-text");
 
+ShareDB.types.register(textType.type)
 
 const shareBackend = new ShareDB({
   /* no options yet */
