@@ -14,6 +14,10 @@ import "codemirror/theme/material.css";
 import textType from "ot-text";
 import shareCodeMirror from "share-codemirror";
 
+function drawToCanvas(html) {
+  document.querySelector("#canvas").contentDocument.documentElement.innerHTML = html
+}
+
 function init () {
   ShareDB.types.register(textType.type)
 
@@ -22,7 +26,7 @@ function init () {
 
   const doc = connection.get("examples", "codemirror")
 
-  const editor = CodeMirror(document.querySelector("#container"), {
+  const editor = CodeMirror(document.querySelector("#editor"), {
     //...this.props.editorConfig,
     mode: "text/html",
     theme: "default",
@@ -92,10 +96,13 @@ function init () {
       editor.on("change", function (editor, change) {
         if (change.origin === "sharedb") { return }
         applyToShareJS(editor, change)
+        drawToCanvas(doc.data)
       })
+      drawToCanvas(doc.data)
       doc.on("op", (op, local) => {
         if (local) { return }
         api._onOp(op, local)
+        drawToCanvas(doc.data)
       })
     }
   })

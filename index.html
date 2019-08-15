@@ -4,10 +4,27 @@
     <meta charset="utf-8">
     <script  defer src="./app.js"></script>
     <style>
+      body {
+        margin: 0;
+      }
+      #editor {
+        width: 100vw;
+        height: 50vh;
+      }
+      #editor > .CodeMirror {
+        height: 100%;
+      }
+      #canvas {
+        width:100vw;
+        height: 50vh;
+        overflow: auto;
+        border: 0;
+        border-top: 2px solid;
+      }
     </style>
   </head>
   <body>
-    <div id="container">
-    </div>
+    <div id="editor"></div>
+    <iframe id="canvas"></iframe>
   </body>
 </html>
