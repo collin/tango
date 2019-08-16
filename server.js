@@ -8,11 +8,13 @@ const textType = require("ot-text");
 
 ShareDB.types.register(textType.type)
 
+const db = require('sharedb-postgres')({host: 'localhost', database: 'tango-dev'});
 const shareBackend = new ShareDB({
-  /* no options yet */
+  db
 })
 
 function createDoc(callback) {
+  return startServer()
   const connection = shareBackend.connect();
   const doc = connection.get("examples", "textarea");
   doc.fetch(function(err) {
@@ -25,7 +27,7 @@ function createDoc(callback) {
   });
 }
 
-createDoc(startServer)
+//createDoc(startServer)
 
 const app = express()
 
@@ -52,3 +54,4 @@ function startServer () {
     console.log(`Listening on port ${PORT}`)
   })
 }
+startServer()

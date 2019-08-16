@@ -25,6 +25,7 @@ function init () {
   const connection = new ShareDB.Connection(socket)
 
   const doc = connection.get("examples", "codemirror")
+  const cursors = connection.get("examples", "cursors")
 
   const editor = CodeMirror(document.querySelector("#editor"), {
     //...this.props.editorConfig,
@@ -37,10 +38,11 @@ function init () {
   })
 
   doc.subscribe(function(err) {
-    let suppress = false
     if (err) throw err
     if (!doc.type) doc.create('text', 'text', err => {
-      console.log('create failed!', err.stack)
+      if (err) {
+        console.log('create failed!', err.stack)
+      }
     })
     if (doc.type && doc.type.name === 'text') {
       editor.setValue(doc.data)
@@ -49,17 +51,13 @@ function init () {
         (...args) => doc.submitOp(...args)
       )
       api.onInsert = function (pos, text) {
-        suppress = true;
         editor.replaceRange(text, editor.posFromIndex(pos), undefined,'sharedb');
-        suppress = false;
       };
 
       api.onRemove = function (pos, length) {
-        suppress = true;
-        var from = editor.posFromIndex(pos);
-        var to = editor.posFromIndex(pos + length);
+        const from = editor.posFromIndex(pos);
+        const to = editor.posFromIndex(pos + length);
         editor.replaceRange('', from, to, 'sharedb');
-        suppress = false;
       };
       function applyToShareJS (editor, change) {
 

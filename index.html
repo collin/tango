@@ -4,22 +4,28 @@
     <meta charset="utf-8">
     <script  defer src="./app.js"></script>
     <style>
-      body {
+      html, body {
         margin: 0;
+        width: 100%;
+        height: 100%;
+      }
+      body {
+        display: flex;
       }
       #editor {
-        width: 100vw;
-        height: 50vh;
+        width: 50%;
+        height: 100%;
       }
       #editor > .CodeMirror {
         height: 100%;
+        width: 100%;
       }
       #canvas {
-        width:100vw;
-        height: 50vh;
+        width: 50%;
+        height: 100%;
         overflow: auto;
         border: 0;
-        border-top: 2px solid;
+        border-left: 2px solid;
       }
     </style>
   </head>
