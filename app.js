@@ -25,7 +25,9 @@ function init () {
   const connection = new ShareDB.Connection(socket)
 
   const doc = connection.get("examples", "codemirror")
-  const cursors = connection.get("examples", "cursors")
+  const cursors = connection.get("examples", "cursors3")
+
+  const userId = 'collin'//prompt("What is your user name?")
 
   const editor = CodeMirror(document.querySelector("#editor"), {
     //...this.props.editorConfig,
@@ -37,6 +39,39 @@ function init () {
     lineNumbers: true
   })
 
+  cursors.subscribe(function(err) {
+    if (err) throw err
+    if (!cursors.type) {
+      cursors.create(new Object, 'json0', err => {
+        if (err) console.error('create failed!', err.stack)
+        else {
+          console.log("cursors", cursors)
+        }
+      })
+    }
+    if (cursors.type && cursors.type.name === 'json0') {
+      let lastCursor = cursors.data[userId]
+      editor.on('cursorActivity', () => {
+        return
+        const cursor = editor.getCursor()
+        if (lastCursor) {
+          cursors.submitOp({
+            p: [userId],
+            od: lastCursor,
+            oi: cursor
+          })
+        }
+        else {
+          cursors.submitOp({
+            p: [userId],
+            oi: cursor
+          })
+        }
+        lastCursor = cursor;
+      })
+    }
+  })
+
   doc.subscribe(function(err) {
     if (err) throw err
     if (!doc.type) doc.create('text', 'text', err => {
@@ -44,62 +79,65 @@ function init () {
         console.log('create failed!', err.stack)
       }
     })
+
     if (doc.type && doc.type.name === 'text') {
       editor.setValue(doc.data)
-      const api = textType.type.api(
-        () => doc.data,
-        (...args) => doc.submitOp(...args)
-      )
-      api.onInsert = function (pos, text) {
-        editor.replaceRange(text, editor.posFromIndex(pos), undefined,'sharedb');
-      };
+      function changeToOp (editor, change) {
+        let op = []
 
-      api.onRemove = function (pos, length) {
-        const from = editor.posFromIndex(pos);
-        const to = editor.posFromIndex(pos + length);
-        editor.replaceRange('', from, to, 'sharedb');
-      };
-      function applyToShareJS (editor, change) {
-
-        let startPos = 0;  // Get character position from # of chars in each line.
-        let i = 0;         // i goes through all lines.
-
-        while (i < change.from.line) {
-          startPos += editor.lineInfo(i).text.length + 1;   // Add 1 for '\n'
-          i++;
+        let startPos = editor.indexFromPos(change.from)
+        if (startPos > 0) {
+          op.push(startPos)
         }
 
-        startPos += change.from.ch;
-
-        if (change.to.line == change.from.line && change.to.ch == change.from.ch) {
-          // nothing was removed.
-        } else {
-          // delete.removed contains an array of removed lines as strings, so this adds
-          // all the lengths. Later change.removed.length - 1 is added for the \n-chars
-          // (-1 because the linebreak on the last line won't get deleted)
+        if (!(change.to.line == change.from.line && change.to.ch == change.from.ch)) {
           let delLen = 0;
-          for (let rm = 0; rm < change.removed.length; rm++) {
-            delLen += change.removed[rm].length;
-          }
-          delLen += change.removed.length - 1;
-          api.remove(startPos, delLen);
+          change.removed.forEach(removal => delLen += removal.length)
+          delLen += change.removed.length - 1
+          op.push({ d: delLen })
         }
+
         if (change.text) {
-          api.insert(startPos, change.text.join('\n'));
+          let insert = change.text.join('\n')
+          if (insert !== '') {
+            op.push(insert)
+          }
         }
-        if (change.next) {
-          applyToShareJS(editor, change.next);
-        }
+
+        return op
       }
-      editor.on("change", function (editor, change) {
-        if (change.origin === "sharedb") { return }
-        applyToShareJS(editor, change)
+
+      editor.on("changes", function (editor, changes) {
+        changes.reverse().forEach(change => {
+          if (change.origin === "sharedb") { return }
+          const op = changeToOp(editor, change)
+          doc.submitOp(op)
+        })
         drawToCanvas(doc.data)
       })
       drawToCanvas(doc.data)
+
       doc.on("op", (op, local) => {
         if (local) { return }
-        api._onOp(op, local)
+        let pos = 0
+        let spos = 0
+        op.forEach(component => {
+          switch (typeof component) {
+            case 'number':
+              pos += component
+              spos += component
+              break
+            case 'string':
+              editor.replaceRange(component, editor.posFromIndex(pos), undefined, 'sharedb');
+              pos += component.length
+              break
+            case 'object':
+              const from = editor.posFromIndex(pos);
+              const to = editor.posFromIndex(pos + component.d);
+              editor.replaceRange('', from, to, 'sharedb');
+              spos += component.d
+          }
+        })
         drawToCanvas(doc.data)
       })
     }
