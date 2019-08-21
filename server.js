@@ -13,22 +13,6 @@ const shareBackend = new ShareDB({
   db
 })
 
-function createDoc(callback) {
-  return startServer()
-  const connection = shareBackend.connect();
-  const doc = connection.get("examples", "textarea");
-  doc.fetch(function(err) {
-    if (err) throw err;
-    if (doc.type === null) {
-      doc.create({content: ""}, callback);
-      return;
-    }
-    callback();
-  });
-}
-
-//createDoc(startServer)
-
 const app = express()
 
 websocketify(app)
