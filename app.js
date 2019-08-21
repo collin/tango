@@ -25,9 +25,6 @@ function init () {
   const connection = new ShareDB.Connection(socket)
 
   const doc = connection.get("examples", "codemirror")
-  const cursors = connection.get("examples", "cursors3")
-
-  const userId = 'collin'//prompt("What is your user name?")
 
   const editor = CodeMirror(document.querySelector("#editor"), {
     //...this.props.editorConfig,
@@ -37,39 +34,6 @@ function init () {
     autoCloseTags: true,
     tabSize: 2,
     lineNumbers: true
-  })
-
-  cursors.subscribe(function(err) {
-    if (err) throw err
-    if (!cursors.type) {
-      cursors.create(new Object, 'json0', err => {
-        if (err) console.error('create failed!', err.stack)
-        else {
-          console.log("cursors", cursors)
-        }
-      })
-    }
-    if (cursors.type && cursors.type.name === 'json0') {
-      let lastCursor = cursors.data[userId]
-      editor.on('cursorActivity', () => {
-        return
-        const cursor = editor.getCursor()
-        if (lastCursor) {
-          cursors.submitOp({
-            p: [userId],
-            od: lastCursor,
-            oi: cursor
-          })
-        }
-        else {
-          cursors.submitOp({
-            p: [userId],
-            oi: cursor
-          })
-        }
-        lastCursor = cursor;
-      })
-    }
   })
 
   doc.subscribe(function(err) {
